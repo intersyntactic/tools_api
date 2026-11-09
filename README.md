@@ -1,42 +1,82 @@
 # is_tools_api
 
-The contract between an intersyntactic tool and the host that runs it. A tool
-package depends on this, and on nothing else of intersyntactic's: not the
-model client, not the code that runs programs, not the path checks. So a tool
-can be written, read and tested without any of them.
+An intersyntactic tool's definition, as a host offers it to a model: its
+name, description and input, and the types of what a call takes and returns.
+A tool package depends on this, and on nothing else of intersyntactic's: not
+the model client, not the airlock, not the path checks. So a tool's
+definition can be written, read and tested without any of them.
 
 ```dart
-import 'package:checked_json/checked_json.dart';
 import 'package:is_tools_api/is_tools_api.dart';
 
-final echo = ToolSpec(
-  name: 'echo',
-  description: 'Say the text back.',
-  inputSchema: .of({
-    'type': 'object',
-    'properties': {
-      'text': {'type': 'string'},
-    },
-    'required': ['text'],
-  }),
-  run: (input, context) async => input.string('text'),
+final class CloseIssue {
+  const CloseIssue(this.number, this.comment);
+  final int number;
+  final String comment;
+}
+
+final closeIssue = ToolSpec<CloseIssue, String>(
+  name: 'issue_close',
+  description: 'Close an issue, saying why.',
+  input: .fields2(
+    Field('number', .integer(minimum: 1), description: 'The issue.'),
+    Field('comment', .string(minLength: 1), description: 'Why it closes.'),
+    CloseIssue.new,
+  ),
+  output: .text,
 );
 ```
 
+The model is shown `minimum: 1` and `minLength: 1`, and the reader refuses
+`{"number": 0}` with "`number` is not an integer from 1": one description,
+so the rules the model is told are the rules it is held to.
+
 ## What is here
 
-- `ToolSpec`: a tool's name, description and input schema, and the `run` that
-  answers a call. The schema is frozen all the way down when the tool is made,
-  so a later change to the map it came from cannot change what the model is
-  told. `toJson()` is the definition in the Messages API's tool shape.
-  `concurrent` says whether a host may run the tool beside other calls; it is
-  never sent.
-- `ToolContext`: what one call tells its host while it runs: its output a line
-  at a time, the processes it starts, the images it attaches. It is an
-  argument to every call, never ambient, so two calls running at once cannot
-  mix their output. `ToolContext.none` when nothing is listening.
-- `ToolImage` and `ToolProcessTap`: an attached image, and the shape of a
-  process hook.
+- `ToolSpec<I, O>`: a tool's name, description and `input`, and the types of
+  what a call takes, `I`, and returns, `O`. `toJson()` is the definition in
+  the Messages API's tool shape, and `wireBytes` its size in a request.
+  `concurrent` says whether a host may carry out the tool's calls beside
+  other calls; it is never sent.
+- `Input<I>`: the object a tool takes, described once. `schema` is its JSON
+  Schema, built from its fields and frozen all the way down; `read` turns the
+  object the model sent into an `I`, or throws a `JsonFieldException` naming
+  the field (`hunks[1]`, `at.line`). A field the schema does not name is
+  refused (`additionalProperties: false`). Made by `Input.field`,
+  `Input.none` and `Input.fields2` to `fields8`, which hand the fields'
+  values, in order, to a function that makes the `I`. Dart has no type for
+  "any number of fields", so the count is in the name, as in Elm's JSON
+  decoders.
+- `Field<T>`: a name, a `Schema<T>` and a description. Required as made;
+  `Field.optional` reads an absent or null field as null, and
+  `Field.orDefault` reads it as a value the schema also shows the model as
+  its `default`.
+- `Schema<T>`: one JSON value: `string`, `integer`, `number`, `boolean`,
+  `choice` (a Dart enum, sent by name), `list` and `object`, with JSON
+  Schema's own names for their constraints (`minLength`, `maxLength`,
+  `minimum`, `maximum`, `minItems`, `maxItems`). The reader checks each
+  constraint the schema shows.
+- `Output<O>`: what a call returns, as the model is shown it. `forModel`
+  turns the `O` into the text of the call's tool result, once per tool, so
+  every answer of one tool reaches the model the same way. `Output.text` is
+  for a tool whose answer is already the text. Only an answer is rendered
+  here: a call that failed has no `O`, and whoever runs the call reports its
+  failure itself.
+- `O` is a shape, and the model never sees the type itself, since the
+  Messages API's tool shape has no return type. Whoever attaches the code
+  that answers a call does it through the definition, so the analyzer checks
+  that the code takes an `I` and returns an `O`, and anything waiting for an
+  `O` can be bound to the tool. Both types come from `input` and `output`, so
+  `ToolSpec(...)` infers them; written out, `ToolSpec<CloseIssue, String>`,
+  they are where a reader looks first.
+
+## What is not here
+
+The code that answers a call, and what a call reports while it runs. In
+intersyntactic the model plans, tools describe effects, the airlock decides
+and records, and drivers operate the world, so those belong to the airlock.
+Until 0.2.0 they were here, as `ToolSpec.run`, `ToolContext`, `ToolImage`
+and `ToolProcessTap`.
 
 The library imports `checked_json` and `dart:convert` and nothing else; a test
 holds it to that.
