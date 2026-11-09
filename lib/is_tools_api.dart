@@ -1,42 +1,59 @@
-/// Shared contracts for tools, their callers and their runners.
+/// A tool's definition, as a host offers it to a model: its name,
+/// description, input and output, and the types of what a call takes and
+/// returns.
 ///
-/// A tool owns its schema and implementation. A host chooses which tools to
-/// expose; a runner invokes them. This library supplies only the contract
-/// between those pieces, with no kit, scheduling, model client or effects.
+/// A host chooses which tools to expose, in its kit. The code that answers a
+/// call, and what a call reports while it runs, are the airlock's, so this
+/// library holds no kit, scheduling, model client, runs or effects: only the
+/// definition.
 library;
 
 import 'dart:convert';
 
 import 'package:checked_json/checked_json.dart';
 
-/// One tool: its input schema and the code that runs it.
-class ToolSpec {
+import 'src/input.dart';
+import 'src/output.dart';
+
+export 'src/input.dart';
+export 'src/output.dart';
+
+/// One tool's definition: its name, description, [input] and [output], and
+/// the types of what a call takes, [I], and returns, [O].
+///
+/// [input] tells the model the object to send and reads the object it sent
+/// as an [I], from one description; [output] turns the [O] a call returns
+/// into the text the model reads. The code that answers a call is the
+/// airlock's, and it is attached through this definition, so the analyzer
+/// checks that it takes an [I] and returns an [O]: a shape another tool or
+/// module can be bound to. [O] itself is never sent to the model; the
+/// Messages API's tool shape has no return type.
+class ToolSpec<I, O> {
   final String name;
   final String description;
 
-  /// A frozen snapshot of the completed JSON Schema, including nested maps
-  /// and lists. Finish building a schema before passing it here: later edits
-  /// to the original do not change the tool's definition.
-  final JsonObject inputSchema;
+  /// What a call takes: the schema the model is shown, and the reader of
+  /// what it sent.
+  final Input<I> input;
 
-  /// Runs with the call's explicit output, process and image hooks.
-  /// Every invocation supplies a context, using [ToolContext.none] when
-  /// nothing is listening. A tool may ignore it, but there is no input-only
-  /// adapter that can silently discard a caller's hooks.
-  final Future<String> Function(JsonObject input, ToolContext context) run;
+  /// What a call returns, as the model is shown it.
+  final Output<O> output;
 
-  /// Whether a runner may run this alongside other calls in the same batch.
-  /// False by default: writes must not race reads or other writes.
-  /// This is execution metadata, not part of the rendered definition.
+  /// Whether a host may carry out this tool's calls alongside other calls in
+  /// the same batch. False by default: writes must not race reads or other
+  /// writes. This is execution metadata, not part of the rendered definition.
   final bool concurrent;
 
   ToolSpec({
     required this.name,
     required this.description,
-    required JsonObject inputSchema,
-    required this.run,
+    required this.input,
+    required this.output,
     this.concurrent = false,
-  }) : inputSchema = inputSchema.deepFrozen();
+  });
+
+  /// [input]'s JSON Schema, frozen all the way down.
+  JsonObject get inputSchema => input.schema;
 
   /// The definition rendered by hosts that use the Messages tool shape.
   JsonObject toJson() => .of({
@@ -48,54 +65,3 @@ class ToolSpec {
   /// UTF-8 bytes this definition contributes to a request.
   int get wireBytes => utf8.encode(jsonEncode(toJson())).length;
 }
-
-/// What one tool call tells its host while it runs.
-///
-/// Hooks travel as an explicit argument, so concurrent calls cannot mix
-/// their output or processes. This contract observes effects; it does not
-/// grant permission to perform them.
-class ToolContext {
-  const ToolContext({this.onOutput, this.onProcess, this.images});
-
-  /// Nothing is listening.
-  static const none = ToolContext();
-
-  /// Where [attachImage] collects this call's images; null when the host
-  /// does not accept them.
-  final List<ToolImage>? images;
-
-  /// Attaches a base64 image to this call's result, next to its text.
-  /// [thumbnail] is for the person's transcript only, never a model.
-  void attachImage(String mediaType, String base64Data, {String? thumbnail}) =>
-      images?.add(ToolImage(mediaType, base64Data, thumbnail: thumbnail));
-
-  /// A call's output a line at a time, as it is printed.
-  final void Function(String line)? onOutput;
-
-  /// A process started (ended false) or released its output pipes (true).
-  /// Closing pipes is distinct from exiting: a grandchild may keep them open.
-  final ToolProcessTap? onProcess;
-
-  /// This context collecting attached images into [into].
-  ToolContext withImages(List<ToolImage> into) =>
-      ToolContext(onOutput: onOutput, onProcess: onProcess, images: into);
-
-  /// Transform output without dropping process or image hooks.
-  ToolContext withOutput(void Function(String line) f) =>
-      ToolContext(onOutput: f, onProcess: onProcess, images: images);
-}
-
-/// An image a tool attached to its result.
-class ToolImage {
-  const ToolImage(this.mediaType, this.data, {this.thumbnail});
-  final String mediaType;
-
-  /// A small base64 PNG for display; not sent to any model.
-  final String? thumbnail;
-
-  /// Base64 image data.
-  final String data;
-}
-
-/// Observes a call's process-group leader and its output-pipe lifecycle.
-typedef ToolProcessTap = void Function(int pid, List<String> argv, bool ended);
