@@ -5,7 +5,7 @@ import 'package:is_tools_api/is_tools_api.dart';
 
 void main() {
   test('tool definition wire shape excludes execution metadata', () {
-    final spec = ToolSpec(
+    final spec = ToolSpec<String>(
       name: 'file_read',
       description: 'Read a file.',
       inputSchema: .of({
@@ -16,7 +16,6 @@ void main() {
         'required': ['path'],
       }),
       concurrent: true,
-      run: (_, _) async => 'contents',
     );
     const wire =
         '{"name":"file_read","description":"Read a file.",'

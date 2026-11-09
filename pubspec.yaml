@@ -1,8 +1,8 @@
 name: is_tools_api
 description: >-
-  The contract between an intersyntactic tool and the host that runs it: a
-  tool's schema and run, and the hooks a call reports through.
-version: 0.1.0
+  An intersyntactic tool's definition, as a host offers it to a model: its
+  name, description and input schema.
+version: 0.2.0
 repository: https://github.com/intersyntactic/tools_api
 
 environment:
