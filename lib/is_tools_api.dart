@@ -2,7 +2,7 @@
 ///
 /// A tool owns its schema and implementation. A host chooses which tools to
 /// expose; a runner invokes them. This library supplies only the contract
-/// between those pieces, with no roster, scheduling, model client or effects.
+/// between those pieces, with no kit, scheduling, model client or effects.
 library;
 
 import 'dart:convert';

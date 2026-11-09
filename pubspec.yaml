@@ -12,5 +12,6 @@ dependencies:
   checked_json: ^0.2.1
 
 dev_dependencies:
+  analyzer: ^14.7.0
   lints: ^6.1.0
   test: ^1.25.0
