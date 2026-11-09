@@ -13,6 +13,7 @@ void main() {
       input: .field(
         Field('path', .string(minLength: 1), description: 'From the root.'),
       ),
+      output: .text,
       concurrent: true,
     );
     const wire =

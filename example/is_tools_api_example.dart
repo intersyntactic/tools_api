@@ -7,6 +7,7 @@ final echo = ToolSpec<String, String>(
   name: 'echo',
   description: 'Say the text back.',
   input: .field(Field('text', .string(), description: 'What to say back.')),
+  output: .text,
 );
 
 void main() {

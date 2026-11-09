@@ -1,5 +1,6 @@
 /// A tool's definition, as a host offers it to a model: its name,
-/// description and input, and the types of what a call takes and returns.
+/// description, input and output, and the types of what a call takes and
+/// returns.
 ///
 /// A host chooses which tools to expose, in its kit. The code that answers a
 /// call, and what a call reports while it runs, are the airlock's, so this
@@ -12,18 +13,21 @@ import 'dart:convert';
 import 'package:checked_json/checked_json.dart';
 
 import 'src/input.dart';
+import 'src/output.dart';
 
 export 'src/input.dart';
+export 'src/output.dart';
 
-/// One tool's definition: its name, description and [input], and the types
-/// of what a call takes, [I], and returns, [O].
+/// One tool's definition: its name, description, [input] and [output], and
+/// the types of what a call takes, [I], and returns, [O].
 ///
 /// [input] tells the model the object to send and reads the object it sent
-/// as an [I], from one description. No field holds an [O]. The code that
-/// answers a call is the airlock's, and it is attached through this
-/// definition, so the analyzer checks that it takes an [I] and returns an
-/// [O]: a shape another tool or module can be bound to. [O] is never sent to
-/// the model; the Messages API's tool shape has no return type.
+/// as an [I], from one description; [output] turns the [O] a call returns
+/// into the text the model reads. The code that answers a call is the
+/// airlock's, and it is attached through this definition, so the analyzer
+/// checks that it takes an [I] and returns an [O]: a shape another tool or
+/// module can be bound to. [O] itself is never sent to the model; the
+/// Messages API's tool shape has no return type.
 class ToolSpec<I, O> {
   final String name;
   final String description;
@@ -31,6 +35,9 @@ class ToolSpec<I, O> {
   /// What a call takes: the schema the model is shown, and the reader of
   /// what it sent.
   final Input<I> input;
+
+  /// What a call returns, as the model is shown it.
+  final Output<O> output;
 
   /// Whether a host may carry out this tool's calls alongside other calls in
   /// the same batch. False by default: writes must not race reads or other
@@ -41,6 +48,7 @@ class ToolSpec<I, O> {
     required this.name,
     required this.description,
     required this.input,
+    required this.output,
     this.concurrent = false,
   });
 

@@ -13,6 +13,9 @@
   shown and the reader that turns what it sent into an `I`, with every
   constraint the schema shows checked by the reader. `inputSchema` is now
   `input.schema`.
+- `Output<O>` turns the `O` a call returns into the text of its tool result,
+  once per tool; `Output.text` is for an answer that is already text. A
+  failed call has no `O`: whoever runs the call reports it.
 - The library comment says kit for a host's set of tools.
 
 ## 0.1.0

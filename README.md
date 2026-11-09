@@ -23,6 +23,7 @@ final closeIssue = ToolSpec<CloseIssue, String>(
     Field('comment', .string(minLength: 1), description: 'Why it closes.'),
     CloseIssue.new,
   ),
+  output: .text,
 );
 ```
 
@@ -55,12 +56,19 @@ so the rules the model is told are the rules it is held to.
   Schema's own names for their constraints (`minLength`, `maxLength`,
   `minimum`, `maximum`, `minItems`, `maxItems`). The reader checks each
   constraint the schema shows.
-- `O` is a shape: no field holds one, and the model never sees it, since the
+- `Output<O>`: what a call returns, as the model is shown it. `forModel`
+  turns the `O` into the text of the call's tool result, once per tool, so
+  every answer of one tool reaches the model the same way. `Output.text` is
+  for a tool whose answer is already the text. Only an answer is rendered
+  here: a call that failed has no `O`, and whoever runs the call reports its
+  failure itself.
+- `O` is a shape, and the model never sees the type itself, since the
   Messages API's tool shape has no return type. Whoever attaches the code
   that answers a call does it through the definition, so the analyzer checks
   that the code takes an `I` and returns an `O`, and anything waiting for an
-  `O` can be bound to the tool. A `ToolSpec` written without its types is an
-  inference failure under `strict-inference`.
+  `O` can be bound to the tool. Both types come from `input` and `output`, so
+  `ToolSpec(...)` infers them; written out, `ToolSpec<CloseIssue, String>`,
+  they are where a reader looks first.
 
 ## What is not here
 
