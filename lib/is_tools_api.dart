@@ -1,5 +1,5 @@
 /// A tool's definition, as a host offers it to a model: its name,
-/// description and input schema.
+/// description and input, and the types of what a call takes and returns.
 ///
 /// A host chooses which tools to expose, in its kit. The code that answers a
 /// call, and what a call reports while it runs, are the airlock's, so this
@@ -11,21 +11,26 @@ import 'dart:convert';
 
 import 'package:checked_json/checked_json.dart';
 
-/// One tool's definition: its name, description and input schema, and [O],
-/// the type of what a call returns.
+import 'src/input.dart';
+
+export 'src/input.dart';
+
+/// One tool's definition: its name, description and [input], and the types
+/// of what a call takes, [I], and returns, [O].
 ///
-/// No field holds an [O]. The code that answers a call is the airlock's, and
-/// it is attached through this definition, so the analyzer checks that it
-/// returns an [O]: a shape another tool or module can be bound to. [O] is
-/// never sent to the model; the Messages API's tool shape has no return type.
-class ToolSpec<O> {
+/// [input] tells the model the object to send and reads the object it sent
+/// as an [I], from one description. No field holds an [O]. The code that
+/// answers a call is the airlock's, and it is attached through this
+/// definition, so the analyzer checks that it takes an [I] and returns an
+/// [O]: a shape another tool or module can be bound to. [O] is never sent to
+/// the model; the Messages API's tool shape has no return type.
+class ToolSpec<I, O> {
   final String name;
   final String description;
 
-  /// A frozen snapshot of the completed JSON Schema, including nested maps
-  /// and lists. Finish building a schema before passing it here: later edits
-  /// to the original do not change the tool's definition.
-  final JsonObject inputSchema;
+  /// What a call takes: the schema the model is shown, and the reader of
+  /// what it sent.
+  final Input<I> input;
 
   /// Whether a host may carry out this tool's calls alongside other calls in
   /// the same batch. False by default: writes must not race reads or other
@@ -35,9 +40,12 @@ class ToolSpec<O> {
   ToolSpec({
     required this.name,
     required this.description,
-    required JsonObject inputSchema,
+    required this.input,
     this.concurrent = false,
-  }) : inputSchema = inputSchema.deepFrozen();
+  });
+
+  /// [input]'s JSON Schema, frozen all the way down.
+  JsonObject get inputSchema => input.schema;
 
   /// The definition rendered by hosts that use the Messages tool shape.
   JsonObject toJson() => .of({
