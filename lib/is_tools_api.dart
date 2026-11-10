@@ -15,6 +15,12 @@ import 'package:checked_json/checked_json.dart';
 import 'src/input.dart';
 import 'src/output.dart';
 
+// The checked_json types this library's own API takes, returns and throws,
+// so a package that depends on this one alone can name them. Only these:
+// the rest of checked_json is not this library's to hand on.
+export 'package:checked_json/checked_json.dart'
+    show JsonFieldException, JsonObject;
+
 export 'src/input.dart';
 export 'src/output.dart';
 

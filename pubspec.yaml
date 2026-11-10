@@ -1,8 +1,9 @@
 name: is_tools_api
 description: >-
   An intersyntactic tool's definition, as a host offers it to a model: its
-  name, description and input schema.
-version: 0.2.0
+  name, description, input and output, and the types of what a call takes
+  and returns.
+version: 0.2.1
 repository: https://github.com/intersyntactic/tools_api
 
 environment:
