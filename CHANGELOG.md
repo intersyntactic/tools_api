@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+- Exports checked_json's `JsonObject` and `JsonFieldException`, and nothing
+  else of it: `Input.read` takes the one and throws the other, and
+  `ToolSpec.toJson` returns a `JsonObject`, so a package that depends on this
+  one alone can name them.
+- The package description says what 0.2.0 holds: a tool's input and output,
+  and the types of what a call takes and returns.
+
 ## 0.2.0
 
 - `ToolSpec<I, O>` is a tool's definition only: its name, description,

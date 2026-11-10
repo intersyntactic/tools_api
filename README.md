@@ -62,6 +62,11 @@ so the rules the model is told are the rules it is held to.
   for a tool whose answer is already the text. Only an answer is rendered
   here: a call that failed has no `O`, and whoever runs the call reports its
   failure itself.
+- `JsonObject` and `JsonFieldException`, re-exported from `checked_json`
+  because this library's own API takes, returns and throws them, so a
+  package that depends on this one alone can name both. Nothing else of
+  `checked_json` is re-exported: a type that only passes through is its
+  owner's to hand on.
 - `O` is a shape, and the model never sees the type itself, since the
   Messages API's tool shape has no return type. Whoever attaches the code
   that answers a call does it through the definition, so the analyzer checks
