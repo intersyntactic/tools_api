@@ -55,7 +55,12 @@ so the rules the model is told are the rules it is held to.
   `choice` (a Dart enum, sent by name), `list` and `object`, with JSON
   Schema's own names for their constraints (`minLength`, `maxLength`,
   `minimum`, `maximum`, `minItems`, `maxItems`). The reader checks each
-  constraint the schema shows.
+  constraint the schema shows. A tool sent with `strict: true` gets a 400
+  for any of these but `minItems` of 0 or 1, since
+  [strict tool use](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#json-schema-limitations)
+  compiles the schema to a grammar, which cannot count. Nothing here sends
+  `strict`; whoever first does needs a schema with those constraints moved
+  into the field's description, the reader still checking them.
 - `Output<O>`: what a call returns, as the model is shown it. `forModel`
   turns the `O` into the text of the call's tool result, once per tool, so
   every answer of one tool reaches the model the same way. `Output.text` is
