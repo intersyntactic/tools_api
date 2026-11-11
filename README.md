@@ -55,12 +55,7 @@ so the rules the model is told are the rules it is held to.
   `choice` (a Dart enum, sent by name), `list` and `object`, with JSON
   Schema's own names for their constraints (`minLength`, `maxLength`,
   `minimum`, `maximum`, `minItems`, `maxItems`). The reader checks each
-  constraint the schema shows. A tool sent with `strict: true` gets a 400
-  for any of these but `minItems` of 0 or 1, since
-  [strict tool use](https://platform.claude.com/docs/en/build-with-claude/structured-outputs#json-schema-limitations)
-  compiles the schema to a grammar, which cannot count. Nothing here sends
-  `strict`; whoever first does needs a schema with those constraints moved
-  into the field's description, the reader still checking them.
+  constraint the schema shows.
 - `Output<O>`: what a call returns, as the model is shown it. `forModel`
   turns the `O` into the text of the call's tool result, once per tool, so
   every answer of one tool reaches the model the same way. `Output.text` is
@@ -79,17 +74,6 @@ so the rules the model is told are the rules it is held to.
   `O` can be bound to the tool. Both types come from `input` and `output`, so
   `ToolSpec(...)` infers them; written out, `ToolSpec<CloseIssue, String>`,
   they are where a reader looks first.
-
-## What is not here
-
-The code that answers a call, and what a call reports while it runs. In
-intersyntactic the model plans, tools describe effects, the airlock decides
-and records, and drivers operate the world, so those belong to the airlock.
-Until 0.2.0 they were here, as `ToolSpec.run`, `ToolContext`, `ToolImage`
-and `ToolProcessTap`.
-
-The library imports `checked_json` and `dart:convert` and nothing else; a test
-holds it to that.
 
 ## The name
 
